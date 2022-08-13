@@ -18,16 +18,6 @@ sentiment_model = pipeline(
     tokenizer='poom-sci/WangchanBERTa-finetuned-sentiment'
 )
 
-not_food_word_list = []
-with open(os.path.join(os.path.dirname(__file__), 'corpus/not_food_word.txt'), 'r') as fp:
-    for item in fp:
-        not_food_word_list.append(item[:-1])
-
-food_list = []
-with open(os.path.join(os.path.dirname(__file__), 'corpus/food_list.txt'), 'r') as fp:
-    for item in fp:
-        food_list.append(item[:-1])
-
 
 def review_segmentation(sentences_list, review_id_list):
     '''
@@ -221,18 +211,13 @@ def seperate_review_by_sentiment(sentences_list, review_id_list, reviewed_date=N
     reviews = []
     ids = []
     sentiments = sentiment_model(sentences_list)
-    if is_personalize:
-        if reviewed_date is not None:
-            reviewed_date = minmax_scale(reviewed_date)/2
+    if is_personalize and reviewed_date is not None:
+        reviewed_date = minmax_scale(reviewed_date)
         personalize = dict()
         count = 0
         for i, sent in enumerate(sentiments):
             if sent['label'] == sentiment:
-                if bool(re.search('|'.join(food_list), sentences_list[i])):
-                    personalize[str(count)] = 0.5 + \
-                        reviewed_date[i] if reviewed_date is not None else 1
-                else:
-                    personalize[str(count)] = 0
+                personalize[str(count)] = reviewed_date[i]
                 reviews.append(sentences_list[i])
                 ids.append(review_id_list[i])
                 count += 1
